@@ -1,0 +1,21 @@
+# fs_constants.py
+
+# Disk Specifications
+CLUSTER_SIZE = 1024
+CLUSTERS_NUMBER = 1024
+DIR_ENTRY_SIZE = 32
+
+# Memory Layout
+SUPERBLOCK_CLUSTER = 0
+FAT_START = 1
+FAT_END = 4
+ROOT_DIR_CLUSTER = 5
+
+# FAT Markers
+FREE_CLUSTER = 0x00
+END_OF_CHAIN = -1
+
+# Directory Entry Attributes
+ATTR_FILE = 0x00
+ATTR_DIR = 0x10
+EMPTY_ENTRY = 0x00
