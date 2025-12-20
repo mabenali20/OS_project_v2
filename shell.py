@@ -3,6 +3,9 @@ import os
 
 
 class Shell:
+    # Invalid characters for FAT file names
+    INVALID_CHARS = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+
     def __init__(self, file_system):
         self.fs = file_system
         # Stack to keep track of directory clusters
@@ -85,6 +88,17 @@ class Shell:
             pass
         return input_str.split()
 
+    def _is_valid_name(self, name):
+        """Check if filename/dirname contains invalid characters."""
+        for char in self.INVALID_CHARS:
+            if char in name:
+                print(f"Error: Name cannot contain '{char}' character.")
+                return False
+        if len(name) == 0:
+            print("Error: Name cannot be empty.")
+            return False
+        return True
+
     # --- Command Implementations ---
 
     def _cmd_help(self):
@@ -155,6 +169,7 @@ class Shell:
 
     def _cmd_mkdir(self, args):
         if not args: print("Usage: mkdir <dirname>"); return
+        if not self._is_valid_name(args[0]): return
         self.fs.create_directory(args[0])
 
     def _cmd_rmdir(self, args):
@@ -163,6 +178,7 @@ class Shell:
 
     def _cmd_touch(self, args):
         if not args: print("Usage: touch <filename>"); return
+        if not self._is_valid_name(args[0]): return
         self.fs.create_file(args[0])
 
     def _cmd_cat(self, args):
@@ -199,7 +215,13 @@ class Shell:
         filename = args[1]
         is_append = len(args) > 2 and args[2].lower() == "-append"
 
+        # Check if file exists, if not create it first
+        entry = self.fs.dir.find_entry(self.fs.current_dir, filename)
+        if not entry:
+            if not self._is_valid_name(filename): return
+            self.fs.create_file(filename)
+
         if is_append:
-            self.fs.append_to_file(filename, text.encode('utf-8'))
+            self.fs.append_to_file(filename, (text + '\n').encode('utf-8'))
         else:
-            self.fs.write_file(filename, text.encode('utf-8'))
+            self.fs.write_file(filename, (text + '\n').encode('utf-8'))

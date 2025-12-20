@@ -21,6 +21,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nCritical System Error: {e}")
     finally:
-        # Ensure data is saved and file handles are closed
-        fs.close()
-        print("System Shutdown Safely.")
+        # Clean up and delete the disk file for a fresh start next run
+        fs.cleanup()
+        print("System Shutdown Safely. Disk cleaned up.")

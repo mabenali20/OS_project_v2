@@ -85,11 +85,13 @@ class FileSystem:
         except Exception as e:
             print(f"Write failed: {e}")
 
-    def read_file(self, filename, parent_cluster=None):
+    def read_file(self, filename, parent_cluster=None, silent=False):
         parent = parent_cluster if parent_cluster is not None else self.current_dir
         entry = self.dir.find_entry(parent, filename)
 
         if not entry:
+            if not silent:
+                print(f"Error: '{filename}' not found.")
             return None
 
         if entry.first_cluster == 0:
@@ -106,7 +108,7 @@ class FileSystem:
     def append_to_file(self, filename, new_data, parent_cluster=None):
         # Read old -> Concatenate -> Write new
         parent = parent_cluster if parent_cluster is not None else self.current_dir
-        old_content = self.read_file(filename, parent) or b""
+        old_content = self.read_file(filename, parent, silent=True) or b""
         self.write_file(filename, old_content + new_data, parent)
 
     def delete_file(self, filename, parent_cluster=None):
@@ -168,15 +170,23 @@ class FileSystem:
             print(f"{e.clean_name:<15} {type_str:<10} {e.file_size:<10} {e.first_cluster}")
         print("-" * 50)
 
-    def copy_file(self, src, dst, parent_cluster=None):
+    def copy_file(self, src, dst, parent_cluster=None, silent=False):
+        if src.upper() == dst.upper():
+            print(f"Error: Source and destination cannot be the same.")
+            return
         content = self.read_file(src, parent_cluster)
         if content is not None:
             self.create_file(dst, parent_cluster)
             self.write_file(dst, content, parent_cluster)
+            if not silent:
+                print(f"Copied '{src}' to '{dst}'.")
 
     def move_file(self, src, dst, parent_cluster=None):
-        self.copy_file(src, dst, parent_cluster)
-        self.delete_file(src, parent_cluster)
+        content = self.read_file(src, parent_cluster)
+        if content is not None:
+            self.copy_file(src, dst, parent_cluster, silent=True)
+            self.delete_file(src, parent_cluster)
+            print(f"Moved '{src}' to '{dst}'.")
 
     def rename_file(self, old, new, parent_cluster=None):
         self.move_file(old, new, parent_cluster)
@@ -196,11 +206,14 @@ class FileSystem:
 
     def export_file_to_host(self, virtual_name, host_path, parent_cluster=None):
         content = self.read_file(virtual_name, parent_cluster)
-        if content is None: return
+        if content is None:
+            print(f"Error: '{virtual_name}' not found.")
+            return
 
         try:
             with open(host_path, 'wb') as f:
                 f.write(content)
+            print(f"Exported '{virtual_name}' to '{host_path}'.")
         except Exception as e:
             print(f"Export failed: {e}")
 
@@ -209,3 +222,11 @@ class FileSystem:
 
     def close(self):
         self.disk.close()
+
+    def cleanup(self):
+        """Close disk and delete the virtual disk file for a fresh start."""
+        disk_path = self.disk.path
+        self.disk.close()
+        if os.path.exists(disk_path):
+            os.remove(disk_path)
+            print(f"Disk '{os.path.basename(disk_path)}' deleted successfully.")
