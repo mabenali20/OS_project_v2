@@ -1,5 +1,5 @@
 import fs_constants
-from utils import Converter
+from converter import Converter
 
 
 class FatTableManager:
