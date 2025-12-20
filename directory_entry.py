@@ -17,7 +17,7 @@ class DirectoryEntry:
 
     def _format_8_3(self, name):
         # Convert "file.txt" to "FILE    TXT"
-        name = name.upper()
+        name = name.upper().strip('.')  # Remove leading/trailing dots
         if "." in name:
             parts = name.rsplit(".", 1)
             base = parts[0][:8].ljust(8)
